@@ -297,3 +297,10 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border:0;border-radiu
 #wtot{font-size:18px!important}
 .story .vis .sv-icon .e{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif}
 @media (hover:none){.kbd{display:none}}
+.top{flex-wrap:wrap}
+input[type=file]{color:var(--mu)}
+input[type=file]::file-selector-button{font:inherit;font-weight:650;font-size:13px;color:var(--tx);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:8px 14px;margin-right:10px;cursor:pointer}
+.g3f{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badges .card{padding:14px 8px}
+@media(min-width:900px){.badges{grid-template-columns:repeat(4,1fr)}}

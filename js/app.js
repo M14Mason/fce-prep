@@ -17,7 +17,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const KEY = 'fce.v1';
 const DEFAULT = () => ({
   v: 1, created: Date.now(), updated: Date.now(),
-  settings: { eventDate: '2027-01-09', hMin: 4, hMax: 7, name: 'Mason', apiKey: '', model: 'claude-sonnet-5-5', voice: false, gistToken: '', gistId: '', autoSync: false, examMinPerQ: 0.6 },
+  settings: { eventDate: '2027-01-09', hMin: 4, hMax: 7, name: 'Mason', apiKey: '', model: 'claude-sonnet-5-5', voice: false, narrate: false, gistToken: '', gistId: '', autoSync: false, examMinPerQ: 0.6 },
   startWeek: monday(new Date()).getTime(),
   log: {},            // { 'YYYY-MM-DD': { learn: sec, exam: sec, pitch: sec, other: sec } }
   tasks: {},          // { 'w0t3': doneTimestamp }
@@ -32,7 +32,7 @@ const DEFAULT = () => ({
   scores: [],         // [{ ts, src, s: { opening.. } , total }]
   runs: [],           // [{ ts, sec }]
   exams: [],          // [{ ts, n, ok, by: { IA: [ok, n] } }]
-  aiQs: [],           // AI-generated questions
+  aiQs: [], deckRuns: [], versions: [], pi: {}, daily: {}, speedBest: 0, matchBest: 0, deckTheme: 'navy-gold',
   chats: [],
   weekTargets: {}     // weekIndex: minutes
 });
@@ -96,7 +96,7 @@ function sparkSVG(vals, h = 120, max) {
 /* ---------- time tracking (learns how much you actually study) ---------- */
 let lastAct = Date.now();
 ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(e => addEventListener(e, () => lastAct = Date.now(), { passive: true }));
-const ROUTE_CAT = { learn: 'learn', exam: 'exam', cards: 'exam', pitch: 'pitch', judge: 'pitch' };
+const ROUTE_CAT = { learn: 'learn', exam: 'exam', cards: 'exam', pitch: 'pitch', judge: 'pitch', deck: 'pitch', tools: 'learn', play: 'exam' };
 function addTime(cat, sec, day = dkey()) { const d = S.log[day] || (S.log[day] = {}); d[cat] = (d[cat] || 0) + sec; save(); }
 setInterval(() => {
   const cat = ROUTE_CAT[route()] || (document.querySelector('.story,.tele') ? 'learn' : null);
@@ -158,10 +158,15 @@ const I = {
   rules: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
   cards: '<rect x="3" y="6" width="14" height="14" rx="3"/><path d="M7 3h11a3 3 0 0 1 3 3v11"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  deck: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 12l3-3 2 2 4-4"/>',
+  tools: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M17 14v6M14 17h6"/>',
+  play: '<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 11v3M5.5 12.5h3M15 12h.01M18 13h.01"/>',
+  trophies: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7"/>', play: '<path d="M7 4v16l13-8z"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>'
 };
 const ic = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
-const NAV = [['today', 'Today'], ['plan', 'Plan'], ['learn', 'Learn'], ['exam', 'Exam'], ['pitch', 'Pitch'], ['judge', 'AI Judge'], ['cards', 'Cards'], ['rules', 'Rules'], ['settings', 'Settings']];
+const NAV = [['today', 'Today'], ['plan', 'Plan'], ['learn', 'Learn'], ['exam', 'Exam'], ['pitch', 'Pitch'], ['deck', 'Deck studio'], ['judge', 'AI Judge'], ['tools', 'Tools'], ['play', 'Play'], ['cards', 'Cards'], ['trophies', 'Trophies'], ['rules', 'Rules'], ['settings', 'Settings']];
 const MOBILE_NAV = ['today', 'plan', 'learn', 'exam', 'pitch', 'more'];
 function buildNav() {
   $('.side').innerHTML = `<div class="brand"><div class="logo">FC</div>FCE Prep</div>` + NAV.map(([k, n]) => `<a href="#${k}" data-r="${k}">${ic(k, 19)}${n}</a>`).join('') + `<div class="foot">Districts in <span id="sideCd"></span></div>`;
@@ -175,7 +180,7 @@ let cleanup = null;
 function render() {
   if (cleanup) { cleanup(); cleanup = null; }
   const r = route(); const v = VIEWS[r] || VIEWS.today;
-  $$('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r || (a.dataset.r === 'more' && ['judge', 'cards', 'rules', 'settings', 'more'].includes(r))));
+  $$('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r || (a.dataset.r === 'more' && ['judge', 'cards', 'rules', 'settings', 'more', 'deck', 'tools', 'play', 'trophies'].includes(r))));
   const old = $('main'); const main = document.createElement('main'); old.replaceWith(main); scrollTo(0, 0);
   cleanup = v(main) || null;
   fillRings(main);
@@ -190,7 +195,7 @@ VIEWS.today = el => {
   const nextL = LESSONS.find(l => !S.lessons[l.id]);
   const hr = new Date().getHours(), greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
   el.innerHTML = `
-  <div class="top"><div><div class="sub">${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div><h1>${greet}, ${esc(S.settings.name || 'there')}</h1></div><span class="pill ${st ? 'gold' : ''}">🔥 ${st} day streak</span></div>
+  <div class="top"><div><div class="sub">${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div><h1>${greet}, ${esc(S.settings.name || 'there')}</h1></div><div class="row" style="gap:6px"><a class="pill gold" href="#trophies" style="text-decoration:none">Lv ${xp().lvl} · ${xp().xp} XP</a><span class="pill">🔥 ${st}</span><button class="btn sm ghost" id="srch" aria-label="Search">${ic('search', 18)}</button></div></div>
   <div class="grid g2">
     <div class="card hero"><div class="k">Districts countdown</div><div class="cd" id="cd" style="margin-top:12px"></div><div class="small muted" style="margin-top:10px">${new Date(eventTs()).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · change in Settings</div></div>
     <div class="card"><div class="row" style="gap:18px">${ringSVG(rd.total, 118, 'ready')}<div class="stack" style="flex:1;min-width:0">
@@ -213,6 +218,7 @@ VIEWS.today = el => {
       </div></div>
   </div>`;
   bindTodo(el);
+  $('#srch').onclick = palette;
   $('#addT').onclick = addTaskModal;
   $('#focus').onclick = focusModal;
   $('#logT').onclick = logModal;
@@ -328,7 +334,7 @@ function playLesson(id, opts = {}) {
   if (opts.only) scenes.splice(0, scenes.length, ...opts.only.map(k => CONCEPTS[k]));
   const dur = 7000; let i = 0, t0 = 0, el0 = 0, paused = false, raf, holdT, held = false, closed = false;
   const ov = document.createElement('div'); ov.className = 'story';
-  ov.innerHTML = `<div class="prog">${scenes.map(() => '<i><b></b></i>').join('')}</div><div class="hd"><span>${L.e} ${esc(L.t)}</span><button class="btn sm ghost" id="sx">${ic('x', 18)}</button></div><div class="stage"><div class="tapL"></div><div class="tapR"></div><div class="vis"></div><div class="cap"></div></div><div class="ft"><span class="tiny muted">Tap sides to skip · hold to pause · ← → keys</span></div>`;
+  ov.innerHTML = `<div class="prog">${scenes.map(() => '<i><b></b></i>').join('')}</div><div class="hd"><span>${L.e} ${esc(L.t)}</span><span class="row" style="gap:4px"><button class="btn sm ghost" id="snar" title="Narrate">${S.settings.narrate ? '🔊' : '🔈'}</button><button class="btn sm ghost" id="sx">${ic('x', 18)}</button></span></div><div class="stage"><div class="tapL"></div><div class="tapR"></div><div class="vis"></div><div class="cap"></div></div><div class="ft"><span class="tiny muted">Tap sides to skip · hold to pause · ← → keys</span></div>`;
   document.body.appendChild(ov); document.body.style.overflow = 'hidden';
   const bars = $$('.prog i', ov);
   function show(n) {
@@ -338,6 +344,7 @@ function playLesson(id, opts = {}) {
     void vis.offsetWidth; vis.classList.add('play'); fillRings(vis);
     if (window.gsap && !reduced) gsap.fromTo(cap, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .5, delay: .15, ease: 'power2.out' });
     t0 = performance.now(); el0 = 0;
+    if (S.settings.narrate) speak(cap.textContent);
   }
   function loop(now) {
     if (closed) return;
@@ -347,7 +354,7 @@ function playLesson(id, opts = {}) {
   function next() { if (i < scenes.length - 1) show(i + 1); else finish(); }
   function prev() { show(Math.max(0, i - 1)); }
   function pause(v) { if (v === paused) return; if (v) el0 += performance.now() - t0; else t0 = performance.now(); paused = v; }
-  function close() { if (closed) return; closed = true; cancelAnimationFrame(raf); ov.remove(); document.body.style.overflow = ''; removeEventListener('keydown', key); }
+  function close() { if (closed) return; closed = true; if ('speechSynthesis' in window) speechSynthesis.cancel(); cancelAnimationFrame(raf); ov.remove(); document.body.style.overflow = ''; removeEventListener('keydown', key); }
   function finish() {
     if (closed) return;
     close();
@@ -361,6 +368,7 @@ function playLesson(id, opts = {}) {
   stage.addEventListener('pointerup', e => { clearTimeout(holdT); if (held) { pause(false); ov.classList.remove('paused'); return; } if (e.target.classList.contains('tapL')) prev(); else next(); });
   stage.addEventListener('pointerleave', () => { clearTimeout(holdT); if (held) { held = false; pause(false); } });
   $('#sx', ov).onclick = close;
+  $('#snar', ov).onclick = e => { e.stopPropagation(); S.settings.narrate = !S.settings.narrate; save(); e.currentTarget.textContent = S.settings.narrate ? '🔊' : '🔈'; if (S.settings.narrate) speak($('.cap', ov).textContent); else speechSynthesis.cancel(); };
   show(0); raf = requestAnimationFrame(loop);
 }
 
@@ -576,12 +584,13 @@ VIEWS.pitch = el => {
   if (tab === 'build') {
     pv.innerHTML = `<div class="card"><h3>Case <span class="pill gold">2026-27</span></h3><p class="small">${esc(CASE.prompt)}</p></div>
     <div class="grid g2" style="margin-top:14px"><div class="card"><label class="f">Real firm you represent (required: research a real company)</label><input type="text" data-p="firm" value="${esc(P.firm)}" placeholder="e.g. Merrill, Edward Jones, a local wealth firm"></div>
-    <div class="card"><label class="f">Client persona (fill gaps the case leaves open)</label><textarea data-p="persona" rows="3" placeholder="Name, business type, revenue, employees, family, retirement age goal">${esc(P.persona)}</textarea></div></div>
+    <div class="card"><label class="f">Client persona (fill gaps the case leaves open)</label><textarea data-p="persona" rows="3" placeholder="Name, business type, revenue, employees, family, retirement age goal">${esc(P.persona)}</textarea><div class="row" style="margin-top:8px;gap:6px"><button class="btn sm" id="rp">🎲 Random client</button>${S.settings.apiKey ? '<button class="btn sm ghost" id="aip">✨ AI client</button>' : ''}</div></div></div>
     <div class="card" style="margin-top:14px"><div class="row sp"><div><div class="k">Script length</div><div class="mono" style="font-size:22px;font-weight:700;margin-top:4px" id="wtot">${words} words · ${estMin.toFixed(1)} min</div></div><span class="pill ${estMin > 12.5 ? 'red' : estMin > 9 ? 'ac' : 'gold'}" id="wpill">${estMin > 12.5 ? 'Too long: leave Q&A time' : estMin > 9 ? 'Good: room for questions' : 'Keep building'}</span></div><p class="tiny muted" style="margin-top:6px">Aim for 10-12 min spoken so you leave 2-3 min for judge questions. Estimated at 140 words/min.</p></div>
     <div class="stack" style="margin-top:14px">${SECTIONS.map((s, i) => { const r = CASE.rubric.find(x => x.k === s.k); return `<div class="card"><h3><span class="row"><span class="secdot">${i + 1}</span>${s.n}</span><span class="tiny muted mono" data-wc="${s.k}">${wc(P[s.k])} w · target ~${s.mins} min</span></h3><p class="tiny muted" style="margin-bottom:8px">Rubric: ${esc(r.d)} (${r.max} pts)</p><div class="row wrap" style="gap:6px;margin-bottom:10px">${s.tips.map(t => `<span class="pill">${esc(t)}</span>`).join('')}</div><textarea data-p="${s.k}" rows="6" placeholder="Write it how you would say it out loud...">${esc(P[s.k])}</textarea></div>`; }).join('')}</div>
-    <div class="row wrap" style="margin-top:14px"><button class="btn" id="tele">▶ Teleprompter</button><button class="btn" id="aisc" ${S.settings.apiKey ? '' : 'disabled'}>✨ AI score my script</button><button class="btn ghost" id="cp">Copy script</button></div>`;
+    <div class="row wrap" style="margin-top:14px"><button class="btn pri" id="ana">🔎 Analyze script</button><button class="btn" id="sver">Save version</button><button class="btn" id="vers">Versions (${(S.versions || []).length})</button><button class="btn" id="lb">📄 Leave-behind</button><button class="btn" id="tele">▶ Teleprompter</button><button class="btn" id="aisc" ${S.settings.apiKey ? '' : 'disabled'}>✨ AI score my script</button><button class="btn ghost" id="cp">Copy script</button></div>`;
     let tt; pv.addEventListener('input', e => { const k = e.target.dataset.p; if (!k) return; P[k] = e.target.value; clearTimeout(tt); tt = setTimeout(() => { save(); const w = SECTIONS.reduce((a, s) => a + wc(P[s.k]), 0), m = w / 140; $('#wtot').textContent = `${w} words · ${m.toFixed(1)} min`; const p = $('#wpill'); p.className = 'pill ' + (m > 12.5 ? 'red' : m > 9 ? 'ac' : 'gold'); p.textContent = m > 12.5 ? 'Too long: leave Q&A time' : m > 9 ? 'Good: room for questions' : 'Keep building'; const c = $(`[data-wc="${k}"]`); if (c) c.textContent = c.textContent.replace(/^\d+ w/, wc(P[k]) + ' w'); }, 300); });
     $('#tele').onclick = teleprompter;
+    $('#ana').onclick = scriptAnalyze; $('#sver').onclick = () => { saveVersion(); render(); }; $('#vers').onclick = versionsModal; $('#lb').onclick = leaveBehind; $('#rp').onclick = randomPersona; const ap = $('#aip'); if (ap) ap.onclick = aiPersona;
     $('#cp').onclick = () => { navigator.clipboard.writeText(scriptText()).then(() => toast('Copied')); };
     $('#aisc').onclick = () => aiScore(scriptText(), 'script');
   }
@@ -629,7 +638,7 @@ function runView(pv) {
   const total = 15 * 60; let left = total, t = null, startT = 0, rec = null, chunks = [], recog = null, words = 0, fillers = 0;
   const segs = [['Setup', .75, '#a98bff']].concat(SECTIONS.map((s, i) => [s.n, s.mins, ['#3ee08f', '#6aa8ff', '#f3c454', '#ff8fa3', '#3ee08f'][i]])).concat([['Judge Q&A', 2.25, '#8a93a8']]);
   pv.innerHTML = `<div class="card" style="text-align:center"><div class="k">Full run</div><div class="timer" id="rt">15:00</div><div class="small" id="rseg" style="color:var(--ac);font-weight:650;height:20px"></div><div class="seglist" style="margin:16px 0 6px">${segs.map(s => `<i style="flex:${s[1]};background:${s[2]};opacity:.35" title="${s[0]}"></i>`).join('')}</div><div class="row sp tiny muted"><span>0:00</span><span>15:00</span></div>
-    <div class="row" style="justify-content:center;margin-top:18px;flex-wrap:wrap"><button class="btn pri" id="rgo">▶ Start</button><button class="btn" id="rrec">🎙 Record audio</button><button class="btn ghost" id="rtele">Teleprompter</button></div>
+    <div class="row" style="justify-content:center;margin-top:18px;flex-wrap:wrap"><button class="btn pri" id="rgo">▶ Start</button><button class="btn" id="rrec">🎙 Record audio</button><button class="btn" id="rvid">🎥 Video</button><button class="btn ghost" id="rtele">Teleprompter</button></div>
     <div class="grid g3" style="margin-top:16px;text-align:left"><div class="card"><div class="k">Pace</div><b class="mono" id="wpm" style="font-size:22px">-</b> <span class="tiny muted">wpm (aim 130-160)</span></div><div class="card"><div class="k">Filler words</div><b class="mono" id="fil" style="font-size:22px">-</b> <span class="tiny muted">um, uh, like</span></div><div class="card"><div class="k">Runs logged</div><b class="mono" style="font-size:22px">${S.runs.length}</b></div></div>
     <div id="rplay" style="margin-top:14px"></div><p class="tiny muted" style="margin-top:10px">Pace and filler counting use your browser's speech recognition (Chrome and Safari). Audio stays on your device.</p></div>`;
   const segAt = el => { let acc = 0; for (const s of segs) { acc += s[1] * 60; if (el < acc) return s; } return segs[segs.length - 1]; };
@@ -645,7 +654,7 @@ function runView(pv) {
     try { const st = await navigator.mediaDevices.getUserMedia({ audio: true }); chunks = []; rec = new MediaRecorder(st); rec.ondataavailable = e => chunks.push(e.data); rec.onstop = () => { st.getTracks().forEach(x => x.stop()); const url = URL.createObjectURL(new Blob(chunks, { type: rec.mimeType })); $('#rplay').innerHTML = `<audio controls src="${url}" style="width:100%"></audio><a class="btn sm" download="fce-run.webm" href="${url}" style="margin-top:8px">Download</a>`; $('#rrec').textContent = '🎙 Record audio'; }; rec.start(); $('#rrec').textContent = '■ Stop recording'; toast('Recording. Audio never leaves your device.'); }
     catch (e) { toast('Mic blocked. Allow microphone access.'); }
   };
-  $('#rtele').onclick = teleprompter;
+  $('#rtele').onclick = teleprompter; $('#rvid').onclick = videoPractice;
   return () => { stop(); if (rec && rec.state === 'recording') rec.stop(); };
 }
 
@@ -717,7 +726,7 @@ VIEWS.rules = el => {
   el.innerHTML = `<div class="top"><div><div class="sub">2026-27 DECA guidelines, verified Nov 16 2026</div><h1>Rules & checklist</h1></div></div>
   <div class="card hero"><h3>The case <span class="pill gold">Sponsor: ${CASE.sponsor}</span></h3><p>${esc(CASE.prompt)}</p></div>
   <div class="grid g2" style="margin-top:14px">
-    <div class="card"><h3>Format</h3>${CASE.timing.map(t => `<div class="row sp small" style="padding:7px 0;border-bottom:1px solid var(--line);gap:16px"><span class="muted">${t[0]}</span><b style="text-align:right">${t[1]}</b></div>`).join('')}<p class="tiny muted" style="margin-top:10px">⚠️ Not published: district exam time limit and whether calculators are allowed. Ask your advisor.</p></div>
+    <div class="card"><h3>Format</h3>${CASE.timing.map(t => `<div class="row sp small" style="padding:7px 0;border-bottom:1px solid var(--line);gap:16px"><span class="muted">${t[0]}</span><b style="text-align:right">${t[1]}</b></div>`).join('')}<p class="tiny muted" style="margin-top:10px">⚠️ Not published: district exam time limit and whether calculators are allowed. ⚠️ DECA+ lists a "Prepared Entry" component for FCE, but the official 2026-27 guidelines list no written entry or upload. Ask your advisor to confirm both.</p></div>
     <div class="card"><h3>Rubric (100 pts)</h3>${CASE.rubric.map(r => `<div class="row sp small" style="padding:6px 0;border-bottom:1px solid var(--line);gap:10px"><span><b>${r.n}</b><div class="tiny muted">${esc(r.d)}</div></span><b class="mono">${r.max}</b></div>`).join('')}</div>
     <div class="card"><h3>✅ Allowed</h3><ul class="list small">${RULES.allowed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
     <div class="card"><h3>⛔ Not allowed</h3><ul class="list small">${RULES.banned.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
@@ -731,7 +740,7 @@ VIEWS.rules = el => {
 
 /* ===================== MORE (mobile) ===================== */
 VIEWS.more = el => {
-  el.innerHTML = `<div class="top"><h1>More</h1></div><div class="grid g2">${[['judge', 'AI mock judge', 'Role-play the meeting and get scored'], ['cards', 'Flashcards', 'Spaced repetition on 65 terms'], ['rules', 'Rules & checklist', 'Guidelines, rubric, pack list'], ['settings', 'Settings & sync', 'Date, hours, API key, sync code']].map(x => `<a class="card hover les" href="#${x[0]}" style="text-decoration:none;color:inherit"><div class="em">${ic(x[0], 24)}</div><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div></a>`).join('')}</div>`;
+  el.innerHTML = `<div class="top"><h1>More</h1></div><div class="grid g2">${[['deck', 'Deck studio', 'Analyze your slides, blueprint, Canva templates'], ['judge', 'AI mock judge', 'Role-play the meeting and get scored'], ['tools', 'Tools', 'Exit calculator, retirement gap, PIs, formulas'], ['play', 'Play', 'Daily challenge, speed round, match, sim'], ['trophies', 'Trophies', 'XP, levels and badges'], ['cards', 'Flashcards', 'Spaced repetition on all key terms'], ['rules', 'Rules & checklist', 'Guidelines, rubric, pack list'], ['settings', 'Settings & sync', 'Date, hours, API key, sync code']].map(x => `<a class="card hover les" href="#${x[0]}" style="text-decoration:none;color:inherit"><div class="em">${ic(x[0], 24)}</div><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div></a>`).join('')}</div>`;
 };
 
 /* ===================== SETTINGS + SYNC ===================== */
@@ -806,9 +815,11 @@ VIEWS.settings = el => {
   $('#rst').onclick = () => confirm2('Reset all data?', 'This deletes your plan progress, mastery, scores, script and settings on this device.', () => { localStorage.removeItem(KEY); load(); toast('Reset'); location.hash = 'today'; render(); });
 };
 
-/* ---------- boot ---------- */
+/* ---------- boot (after all scripts load) ---------- */
+addEventListener('DOMContentLoaded', () => {
 buildNav();
 render();
 tickCd(); setInterval(tickCd, 30000);
 if (S.settings.autoSync && S.settings.gistToken && S.settings.gistId) gistPull(true);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+});
