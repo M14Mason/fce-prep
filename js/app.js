@@ -174,13 +174,13 @@ function buildNav() {
 }
 
 /* ---------- router ---------- */
-const route = () => (location.hash.slice(1).split('/')[0] || 'today');
+const route = () => (location.hash.slice(1).split('/')[0] || 'go');
 const VIEWS = {};
 let cleanup = null;
 function render() {
   if (cleanup) { cleanup(); cleanup = null; }
-  const r = route(); const v = VIEWS[r] || VIEWS.today;
-  $$('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r || (a.dataset.r === 'more' && ['judge', 'cards', 'rules', 'settings', 'more', 'deck', 'tools', 'play', 'trophies'].includes(r))));
+  const r = route(); const v = VIEWS[r] || VIEWS.go || VIEWS.today;
+  $$('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === r || (a.dataset.r === 'more' && ['cards', 'rules', 'settings', 'more', 'deck', 'tools', 'play', 'trophies', 'today', 'plan', 'learn'].includes(r))));
   const old = $('main'); const main = document.createElement('main'); old.replaceWith(main); scrollTo(0, 0);
   cleanup = v(main) || null;
   fillRings(main);
@@ -740,7 +740,7 @@ VIEWS.rules = el => {
 
 /* ===================== MORE (mobile) ===================== */
 VIEWS.more = el => {
-  el.innerHTML = `<div class="top"><h1>More</h1></div><div class="grid g2">${[['deck', 'Deck studio', 'Analyze your slides, blueprint, Canva templates'], ['judge', 'AI mock judge', 'Role-play the meeting and get scored'], ['tools', 'Tools', 'Exit calculator, retirement gap, PIs, formulas'], ['play', 'Play', 'Daily challenge, speed round, match, sim'], ['trophies', 'Trophies', 'XP, levels and badges'], ['cards', 'Flashcards', 'Spaced repetition on all key terms'], ['rules', 'Rules & checklist', 'Guidelines, rubric, pack list'], ['settings', 'Settings & sync', 'Date, hours, API key, sync code']].map(x => `<a class="card hover les" href="#${x[0]}" style="text-decoration:none;color:inherit"><div class="em">${ic(x[0], 24)}</div><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div></a>`).join('')}</div>`;
+  el.innerHTML = `<div class="top"><h1>More</h1></div><div class="grid g2">${[['today', 'Dashboard', 'Countdown, readiness, to-do, focus timer'], ['plan', 'Plan', 'The full week-by-week plan'], ['learn', 'All lessons', 'Every story lesson and lab'], ['deck', 'Deck studio', 'Analyze your slides, blueprint, Canva templates'], ['judge', 'AI mock judge', 'Role-play the meeting and get scored'], ['tools', 'Tools', 'Exit calculator, retirement gap, PIs, formulas'], ['play', 'Play', 'Daily challenge, speed round, match, sim'], ['trophies', 'Trophies', 'XP, levels and badges'], ['cards', 'Flashcards', 'Spaced repetition on all key terms'], ['rules', 'Rules & checklist', 'Guidelines, rubric, pack list'], ['settings', 'Settings & sync', 'Date, hours, API key, sync code']].map(x => `<a class="card hover les" href="#${x[0]}" style="text-decoration:none;color:inherit"><div class="em">${ic(x[0], 24)}</div><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div></a>`).join('')}</div>`;
 };
 
 /* ===================== SETTINGS + SYNC ===================== */

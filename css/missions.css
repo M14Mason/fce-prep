@@ -1,0 +1,56 @@
+/* ---------- Continue screen ---------- */
+.go-hero{padding:22px 20px;background:linear-gradient(150deg,rgba(62,224,143,.16),rgba(106,168,255,.08) 55%,transparent);border-color:rgba(62,224,143,.28)}
+.go-hero.boss{background:linear-gradient(150deg,rgba(255,107,107,.18),rgba(169,139,255,.1) 55%,transparent);border-color:rgba(255,107,107,.32)}
+.go-t{font-size:28px;font-weight:780;letter-spacing:-.02em;margin:8px 0 4px;line-height:1.15}
+.go-btn{width:100%;margin-top:18px;min-height:56px;font-size:17px;border-radius:16px}
+.go-hero.boss .go-btn{background:var(--red);color:#1a0505!important}
+.slots{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--mu);font-weight:600}
+.slot i{width:100%;aspect-ratio:4/3;border-radius:10px;border:1.5px dashed var(--line2);display:grid;place-items:center;font-style:normal;font-size:15px;transition:all .3s}
+.slot.on i{border:1.5px solid var(--gold);background:rgba(243,196,84,.14);color:var(--gold)}
+.slot.on{color:var(--tx)}
+.slot.new i{animation:slotpop .9s cubic-bezier(.2,1.6,.4,1) both;box-shadow:0 0 0 4px rgba(243,196,84,.2)}
+@keyframes slotpop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+.act h3{margin-bottom:0}
+.act.open h3{margin-bottom:12px}
+.act-list{display:flex;flex-direction:column;gap:6px}
+.mrow{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.15);font-size:14px;transition:border-color .2s}
+.mrow.cur{border-color:var(--ac);background:rgba(62,224,143,.08)}
+.mrow.done .mdot{color:var(--ac)}
+.mrow.lock{opacity:.45;cursor:default}
+.mdot{width:28px;text-align:center;flex:none}
+
+/* ---------- mission overlay ---------- */
+.mx{position:fixed;inset:0;z-index:90;background:#05070c;display:flex;flex-direction:column;overflow-y:auto}
+.mx-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));position:sticky;top:0;background:#05070c;z-index:2}
+.mx-dots{display:flex;gap:6px;flex:1;justify-content:center}
+.mx-dots i{height:4px;flex:1;max-width:60px;border-radius:4px;background:rgba(255,255,255,.14)}
+.mx-dots i.d{background:var(--ac)}
+.mx-dots i.c{background:#fff}
+.mx-body{width:100%;max-width:620px;margin:0 auto;padding:12px 18px calc(40px + env(safe-area-inset-bottom))}
+.mx-step{text-align:center;padding-top:6vh}
+.mx-big{font-size:64px;line-height:1;margin-bottom:14px}
+.mx-h{font-size:24px;font-weight:760;letter-spacing:-.02em;margin:6px 0 8px;line-height:1.2}
+.chip{padding:8px 12px;border-radius:99px;border:1px solid var(--line2);background:rgba(0,0,0,.2);font-size:13px;font-weight:550;transition:all .15s}
+.chip.on{background:var(--ac);color:#04150c;border-color:var(--ac)}
+.cue{background:rgba(255,255,255,.03)}
+.mic{width:84px;height:84px;border-radius:50%;background:var(--ac);font-size:34px;margin-top:12px;box-shadow:0 0 0 0 rgba(62,224,143,.5);transition:transform .15s}
+.mic:active{transform:scale(.95)}
+.mic:disabled{opacity:.35}
+.mic.rec{background:var(--red);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,107,.55)}70%{box-shadow:0 0 0 22px rgba(255,107,107,0)}100%{box-shadow:0 0 0 0 rgba(255,107,107,0)}}
+.boss-fight{text-align:left;padding-top:2vh}
+.hp{height:10px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0 18px;border:1px solid rgba(255,107,107,.35)}
+.hp i{display:block;height:100%;background:linear-gradient(90deg,#ff6b6b,#ff9a6b);transition:width .6s cubic-bezier(.2,.9,.3,1)}
+.judge-q{font-size:22px;font-weight:650;line-height:1.4;margin:6px 0 18px}
+.rank{font-size:84px;font-weight:850;line-height:1;margin:10px 0;font-family:var(--fm)}
+.rank.rS{color:var(--gold);text-shadow:0 0 30px rgba(243,196,84,.5)}
+.rank.rA{color:var(--ac)}
+.rank.rB{color:var(--blue)}
+.rank.rC{color:var(--mu)}
+details.card summary{cursor:pointer;list-style:none}
+details.card summary::-webkit-details-marker{display:none}
+.opt.nq{font-size:14px;padding:12px 14px}
+.opt.nq+.opt.nq{margin-top:0}
+@media(prefers-reduced-motion:reduce){.mic.rec,.slot.new i{animation:none}}
+.act-list[hidden]{display:none}

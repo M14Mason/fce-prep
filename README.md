@@ -2,7 +2,17 @@
 
 DECA Financial Consulting (FCE) 2026-27 prep app. Live: https://m14mason.github.io/fce-prep/
 
-- **Today**: countdown, readiness score, adaptive daily to-do, focus timer
+- **Continue (new default)**: 20 missions in 5 acts with 5 voice boss fights. One button opens exactly where you stopped. Every mission saves a real piece of your pitch (client, opening, needs, value, plan, close)
+
+### Why missions work (research behind each mechanic)
+- **One next step, no menu**: vague tasks feel threatening and trigger avoidance; one concrete button removes the choice.
+- **Build, don't just study**: the IKEA effect (Norton, Mochon, Ariely 2012) says we value what we build, but only when it's finished. So each mission ends with a saved piece of the pitch.
+- **Progress starts above zero**: the endowed progress effect (Nunes and Dreze 2006): signing up counts as step 1, and the bar speeds up as you near the end (goal gradient).
+- **Voice reps + "easier or harder than expected?"**: repeated exposure lowers public speaking anxiety; checking expectation against reality is part of how it works.
+- **Bosses get harder each act**: graded exposure to judge Q&A, scored with LAER, with a model answer each time.
+- **"When's the next one?"**: if-then plans (implementation intentions) had a medium-to-large effect on follow-through (d = .65, Gollwitzer and Sheeran 2006). Optional calendar event.
+- **Gentle chain**: one free miss per week, so one bad day doesn't wipe out the streak.
+- **Dashboard** (was Today): countdown, readiness score, adaptive daily to-do, focus timer
 - **Plan**: 8-week plan to districts; weekly target learns from the time you actually log
 - **Learn**: 13 Instagram-story lessons (100 animated scenes), 5 slider labs, quiz after each
 - **Exam**: 149 questions, blueprint-weighted smart practice, reworded retries, timed mocks, mistake notebook, AI question generator
