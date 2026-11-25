@@ -492,3 +492,40 @@ xp = function () { // missions and bosses feed the same XP system
   return { xp: v, lvl, pct: (v - cur) / (nxt - cur) * 100, nxt: nxt - v };
 };
 BADGES.push(['🚪', 'In the room', 'Finish mission 1', () => !!MS().done.m1], ['⚔️', 'Boss slayer', 'Beat all 5 bosses', () => ['b1', 'b2', 'b3', 'b4', 'b5'].every(k => MS().done[k])], ['🎙', 'Ten reps', '10 voice reps', () => MS().reps.length >= 10], ['👑', 'S rank', 'Get an S on any boss', () => Object.values(MS().boss).includes('S')]);
+
+/* ---------- one-tap device linking: scan a QR once, auto sync forever ---------- */
+(function linkFromHash() {
+  const h = location.hash; if (!h.startsWith('#sync=')) return;
+  try {
+    const o = JSON.parse(atob(decodeURIComponent(h.slice(6))));
+    if (!o.t || !o.g) throw new Error('bad link');
+    Object.assign(S.settings, { gistToken: o.t, gistId: o.g, autoSync: true }); localStorage.setItem(KEY, JSON.stringify(S));
+    history.replaceState(null, '', location.pathname + '#go');
+    const fresh = !Object.keys(MS().done).length && !Object.keys(S.log).length && !(S.pitch.opening || S.pitch.persona);
+    addEventListener('DOMContentLoaded', () => { gistPull(!fresh).then(() => toast('Device linked ✓ Auto sync is on', 3500)); });
+  } catch (e) { history.replaceState(null, '', location.pathname + '#go'); addEventListener('DOMContentLoaded', () => toast('That sync link is broken. Make a new one in Settings.', 4000)); }
+})();
+function deviceLink() {
+  const st = S.settings; return location.origin + location.pathname + '#sync=' + encodeURIComponent(btoa(JSON.stringify({ t: st.gistToken, g: st.gistId })));
+}
+async function linkModal() {
+  const st = S.settings;
+  if (!st.gistToken) return toast('Paste your GitHub token in Auto sync below first (one time only)', 4000);
+  if (!st.gistId) { await gistPush(true); if (!S.settings.gistId) return toast('Could not create the sync file. Check the token.', 4000); }
+  st.autoSync = true; save();
+  const link = deviceLink();
+  modal(`<h3>📲 Link another device</h3><p class="small muted" style="margin-top:6px">Scan with your iPhone camera, open the link, done. That device syncs automatically from then on.</p><div id="qr" style="background:#fff;padding:14px;border-radius:14px;width:fit-content;margin:16px auto"></div><div class="row" style="justify-content:center;gap:8px"><button class="btn sm" id="cpl">Copy link</button><button class="btn sm pri" data-close>Done</button></div><p class="tiny" style="color:var(--gold);margin-top:12px">⚠️ This link contains your sync key. Only open it on your own devices. Never post or share it.</p>`, async m => {
+    $('#cpl', m).onclick = () => navigator.clipboard.writeText(link).then(() => toast('Copied. Send it only to yourself.'));
+    try { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'); new QRCode($('#qr', m), { text: link, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.L }); }
+    catch (e) { $('#qr', m).outerHTML = '<p class="small muted" style="text-align:center;margin:12px 0">QR could not load. Use Copy link and AirDrop it to yourself.</p>'; }
+  });
+}
+const _settingsView = VIEWS.settings;
+VIEWS.settings = el => {
+  const r = _settingsView(el);
+  const card = document.createElement('div'); card.className = 'card'; card.style.marginBottom = '14px';
+  card.innerHTML = `<h3>📲 Sync your phone <span class="pill ${S.settings.autoSync && S.settings.gistId ? 'ac' : ''}">${S.settings.autoSync && S.settings.gistId ? 'on' : 'off'}</span></h3><p class="small muted">Set up once on this device, then scan one QR code on each other device. No codes to copy after that.</p><button class="btn pri" id="lnk" style="margin-top:10px">Link a device</button>`;
+  const grid = el.querySelector('.grid'); grid.parentNode.insertBefore(card, grid);
+  $('#lnk', card).onclick = linkModal;
+  return r;
+};
